@@ -1,0 +1,33 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'snmp_idrac'
+    static_configs:
+      - targets:
+        - 192.168.1.101  # Replace with your iDRAC IP
+    metrics_path: /snmp
+    params:
+      module: [dell_idrac]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp_exporter:9116
+
+  - job_name: 'snmp_ilo'
+    static_configs:
+      - targets:
+        - 192.168.1.102  # Replace with your iLO IP
+    metrics_path: /snmp
+    params:
+      module: [hp_ilo]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: snmp_exporter:9116
