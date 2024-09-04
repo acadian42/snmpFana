@@ -1,0 +1,30 @@
+---
+- name: Mitigate Terrapin OpenSSH Vulnerability
+  hosts: all
+  become: yes
+  vars:
+    sshd_config_path: /etc/ssh/sshd_config
+
+  tasks:
+    - name: Backup sshd_config
+      copy:
+        src: "{{ sshd_config_path }}"
+        dest: "{{ sshd_config_path }}.bak"
+        remote_src: yes
+
+    - name: Disable CBC ciphers
+      lineinfile:
+        path: "{{ sshd_config_path }}"
+        regexp: '^Ciphers'
+        line: 'Ciphers aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com'
+
+    - name: Set KexAlgorithms
+      lineinfile:
+        path: "{{ sshd_config_path }}"
+        regexp: '^KexAlgorithms'
+        line: 'KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group-exchange-sha256'
+
+    - name: Restart sshd service
+      service:
+        name: sshd
+        state: restarted
