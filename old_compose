@@ -1,3 +1,4 @@
+# Compose file for production.
 version: '3'
 
 volumes:
@@ -10,7 +11,8 @@ services:
     restart: unless-stopped
     volumes:
       - storage:/var/lib/snipeit
-      - ./ssl:/var/lib/snipeit/ssl
+      - ./ssl:/etc/ssl/snipe-it
+      - ./apache2/ssl.conf:/etc/apache2/sites-available/ssl.conf
     ports:
       - "${APP_PORT:-8000}:80"
       - "443:443"
@@ -19,10 +21,17 @@ services:
         condition: service_healthy
         restart: true
     environment:
-      # SSL Configuration
-      - SSL_CERT_PATH=/var/lib/snipeit/ssl/cert.pem
-      - SSL_KEY_PATH=/var/lib/snipeit/ssl/privkey.pem
-      - SSL_CHAIN_PATH=/var/lib/snipeit/ssl/chain.pem
+      - SSL_CERT_PATH=/etc/ssl/snipe-it/cert.pem
+      - SSL_KEY_PATH=/etc/ssl/snipe-it/privkey.pem
+      - APP_FORCE_TLS=true
+      - APP_URL=https://127.0.0.1
+      - SECURE_COOKIES=true
+    command: >
+      bash -c "a2enmod ssl &&
+              a2enmod rewrite &&
+              a2dissite default-ssl &&
+              a2ensite ssl &&
+              apache2ctl -D FOREGROUND"
     env_file:
       - .env
 
